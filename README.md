@@ -1,0 +1,89 @@
+# Glyphi Teams
+
+The team edition of [Glyphi](https://glyphi.xyz): the same desktop app, plus a **Teams window** where a boss
+creates a group, hands out an invite code, and reads what each member chose to share — tokens, cost, active days
+and the seven-day trend, per person and for the whole team.
+
+This repository is licensed **MIT** (see `LICENSE`), so it can be used, modified and redistributed in commercial
+contexts. The single-player Glyphi app is not: it stays under the PolyForm Noncommercial License.
+
+- Website: <https://glyphi.xyz/teams>
+- Issues: <https://github.com/Artleboss2/Glyphi-Teams/issues>
+
+## What the Teams window does
+
+| Role | Can do |
+| --- | --- |
+| Owner (the boss) | Create the team, read the invite code, see every member's shared totals, remove a member, publish or hide their own profile |
+| Member | Join with a code, decide per team whether to share their numbers, remove themselves |
+
+Sharing is per member and per team, and it is **on by default for a new member**: joining a team is already an
+answer to "do you want your boss to see this?". Turning it off deletes what was already shared, so the switch
+means what it says instead of only stopping future uploads.
+
+## What is shared
+
+Daily totals only: a date, a token count, an estimated cost and the per-tool split. Never prompts, never
+completions, never source code, file paths or project names. The Teams database stores one row per member per
+day and nothing else.
+
+## Layout
+
+```
+apps/desktop        the Electron app, with the Teams window (src/renderer/TeamsManager.tsx)
+packages/           the shared contracts and engine packages
+supabase/           the Teams backend: schema and the Edge Function that fronts it
+```
+
+## Running it
+
+```bash
+npm install          # or bun install
+npm run desktop:dev  # opens the app; the Teams entry sits in the left rail
+```
+
+The Teams window talks to the API in `apps/desktop/src/main/teams-client.ts`. Point it somewhere else with the
+`GLYPHI_TEAMS_API` environment variable.
+
+## Self-hosting the backend
+
+```
+supabase/
+  migrations/0001_teams_schema.sql        accounts, sessions, teams, memberships, daily usage
+  functions/glyphi-teams-api/index.ts     the only door: auth, teams, invites, usage, sharing
+```
+
+The schema is locked the same way as the single-player one: everything lives in the `teams` schema with RLS
+enabled and no policies, every `teams_api_*` function is revoked from `anon` and `authenticated`, and only the
+Edge Function's `service_role` reaches the data. Passwords are hashed with bcrypt inside the database
+(`crypt` / `gen_salt('bf')`), and session tokens are stored as SHA-256 hashes, so a database leak cannot be
+replayed against the API.
+
+To recreate it on your own project:
+
+```bash
+supabase db push --project-ref <ref>
+supabase functions deploy glyphi-teams-api --project-ref <ref> --no-verify-jwt
+```
+
+Nothing else is required: `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are injected into the function by the
+platform.
+
+## API
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| `POST` | `/api/auth/sign-up` | Create an account, returns a session token |
+| `POST` | `/api/auth/sign-in` | Exchange email + password for a session token |
+| `GET` | `/api/auth/get-session` | Who the token belongs to |
+| `POST` | `/api/auth/sign-out` | Revoke the token |
+| `GET` | `/api/teams` | Every team the account belongs to, with members and totals |
+| `POST` | `/api/teams` | Create a team (owner only by construction) |
+| `POST` | `/api/teams/join` | Join with an invite code |
+| `POST` | `/api/teams/usage` | Push daily aggregates (`{ days: [{ day, tokens, costMicros, tools }] }`) |
+| `POST` | `/api/teams/sharing` | Turn sharing on or off for one team |
+| `POST` | `/api/teams/members/remove` | Remove a member (owner), or leave |
+
+## License
+
+MIT © 2026 Arthur Godart.
