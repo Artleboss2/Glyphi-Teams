@@ -8,6 +8,7 @@ export const hi: Messages = {
   "nav.profile": "सार्वजनिक प्रोफ़ाइल",
   "nav.diagnostics": "निदान",
   "nav.settings": "सेटिंग्स",
+  "nav.teams": "टीमें",
 
   "window.minimize": "छोटा करें",
   "window.maximize": "बड़ा करें",

@@ -10,6 +10,7 @@ export const en = {
   "nav.profile": "Public profile",
   "nav.diagnostics": "Diagnostics",
   "nav.settings": "Settings",
+  "nav.teams": "Teams",
 
   "window.minimize": "Minimize",
   "window.maximize": "Maximize",

@@ -2,7 +2,7 @@ import { CloudAccount, type KnownProfileStatus } from "./cloud-account";
 import { TeamsClient } from "./teams-client";
 import type { TeamsAction, TeamsActionPayload } from "../shared/desktop-api";
 
-const teamsClient = new TeamsClient();
+const teamsClient = new TeamsClient(() => path.join(app.getPath("userData"), "history.sqlite"));
 import { CATALOG, discoverProviderUsage, scanInstalledTools } from "../engine/discovery";
 import { summarizeDiscovery } from "./provider-discovery";
 import { ProviderCredentialStore, configureProviderCredentials } from "./provider-credentials";

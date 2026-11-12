@@ -8,6 +8,7 @@ export const zh: Messages = {
   "nav.profile": "公开资料",
   "nav.diagnostics": "诊断",
   "nav.settings": "设置",
+  "nav.teams": "团队",
 
   "window.minimize": "最小化",
   "window.maximize": "最大化",

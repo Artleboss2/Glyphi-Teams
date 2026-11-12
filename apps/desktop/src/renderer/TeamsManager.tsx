@@ -159,9 +159,20 @@ export function TeamsManager(): React.JSX.Element {
           <h1 style={{ fontSize: 28, fontWeight: 500, margin: "4px 0 2px" }}>{state.account?.displayName}</h1>
           <p style={{ fontSize: 12, opacity: 0.6, margin: 0 }}>{state.account?.email}</p>
         </div>
-        <button style={ghost} type="button" onClick={() => void run("sign-out")} disabled={busy}>
-          Sign out
-        </button>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button
+            style={button}
+            type="button"
+            onClick={() => void run("sync")}
+            disabled={busy || state.teams.length === 0}
+            title="Send the last thirty days of local usage to every team you are in"
+          >
+            {busy ? "Sharing…" : "Share my last 30 days"}
+          </button>
+          <button style={ghost} type="button" onClick={() => void run("sign-out")} disabled={busy}>
+            Sign out
+          </button>
+        </div>
       </header>
 
       {error ? <p style={{ margin: 0, fontSize: 13, color: "#e0a08f" }}>{error}</p> : null}

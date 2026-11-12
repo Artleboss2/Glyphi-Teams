@@ -8,6 +8,7 @@ export const fr: Messages = {
   "nav.profile": "Profil public",
   "nav.diagnostics": "Diagnostics",
   "nav.settings": "Réglages",
+  "nav.teams": "Équipes",
 
   "window.minimize": "Réduire",
   "window.maximize": "Agrandir",

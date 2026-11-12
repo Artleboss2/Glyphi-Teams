@@ -306,6 +306,18 @@ export function WrenchIcon(props: IconProps): React.JSX.Element {
 }
 
 /** Offering: a lotus vase. */
+export function TeamsIcon(props: IconProps): React.JSX.Element {
+  return (
+    <IconBase {...props}>
+      <path d="M4 9h2v6.8H4" />
+      <path d="M8 9h2v6.8H8" />
+      <path d="M12 9h2v6.8h-2" />
+      <path d="M16 9h2v6.8h-2" />
+      <path d="M3.5 20h17" />
+    </IconBase>
+  );
+}
+
 export function GiftIcon(props: IconProps): React.JSX.Element {
   return (
     <IconBase {...props}>

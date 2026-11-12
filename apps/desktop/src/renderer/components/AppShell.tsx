@@ -1,6 +1,6 @@
 import type { AppRoute, EngineStatus } from "../../shared/desktop-api";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
-import { BellIcon, DayIcon, InsightsIcon, ProfileIcon, PulseIcon, SettingsIcon, TrendsIcon } from "../icons";
+import { BellIcon, DayIcon, InsightsIcon, ProfileIcon, PulseIcon, SettingsIcon, TeamsIcon, TrendsIcon } from "../icons";
 import { useI18n } from "../i18n";
 import type { MessageKey } from "../i18n";
 
@@ -43,7 +43,8 @@ const routeTitleKeys: Record<AppRoute, MessageKey> = {
   alerts: "nav.alerts",
   profile: "nav.profile",
   diagnostics: "nav.diagnostics",
-  settings: "nav.settings"
+  settings: "nav.settings",
+  teams: "nav.teams"
 };
 
 /** Reading order of the rail, so a page slides in from the side it comes from. */
@@ -55,7 +56,8 @@ const routeOrder: Record<AppRoute, number> = {
   alerts: 4,
   profile: 5,
   diagnostics: 6,
-  settings: 7
+  settings: 7,
+  teams: 8
 };
 
 export function AppShell({ route, engineStatus, noticeCount, onNavigate, profileBadge = false, appMarkUrl = null, previousRoute = null,  activityControl,
@@ -178,10 +180,10 @@ export function AppShell({ route, engineStatus, noticeCount, onNavigate, profile
             status={engineStatus}
           />
           <RailButton
-            icon={ProfileIcon}
+            icon={TeamsIcon}
             isCurrent={route === "teams"}
             itemRef={(node) => registerRailButton("teams", node)}
-            label="Teams"
+            label={t("nav.teams")}
             onPress={() => onNavigate("teams")}
           />
           <RailButton

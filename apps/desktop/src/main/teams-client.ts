@@ -1,6 +1,7 @@
 import { app } from "electron";
 import fs from "node:fs";
 import path from "node:path";
+import { readUsageDays } from "./teams-usage";
 import type {
   TeamsAction,
   TeamsActionPayload,
@@ -50,6 +51,9 @@ function emptyState(error: string | null = null): TeamsState {
 export class TeamsClient {
   private session: StoredSession | null = null;
   private loaded = false;
+
+  /** Where the app keeps its local history, so `sync` can read today's totals. */
+  constructor(private readonly historyPath: () => string = () => "") {}
 
   private file(): string {
     return path.join(app.getPath("userData"), "teams-session.json");
@@ -220,7 +224,11 @@ export class TeamsClient {
       }
 
       if (action === "sync") {
-        const days: TeamsUsageDay[] = Array.isArray(payload.days) ? payload.days.slice(0, 60) : [];
+        // The renderer never computes usage: the main process reads the local
+        // history database itself and sends only day totals.
+        const days: TeamsUsageDay[] = Array.isArray(payload.days)
+          ? payload.days.slice(0, 60)
+          : readUsageDays(this.historyPath(), 30);
         if (days.length === 0) {
           return { ...(await this.fetchTeams()), error: "There is nothing to share yet." };
         }
