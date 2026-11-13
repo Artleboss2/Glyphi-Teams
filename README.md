@@ -110,3 +110,20 @@ and the window gives you:
 
 Everything the app sends is a day total or ciphertext. Nothing is stored by Glyphi
 Teams: the backend runs in the company's own Supabase project.
+
+## Builds and installers
+
+The application is packaged with electron-forge. One command builds the
+distributables for the OS you run it on:
+
+```
+npx bun@1.3.14 run desktop:make
+```
+
+- **Windows** — `out/make/squirrel.windows/x64/Glyphi-<version> Setup.exe` (Squirrel) plus a portable `zip/win32/x64/`.
+- **macOS** — `out/make/dmg/` and `zip/darwin/`; must be run on macOS.
+- **Linux** — `out/make/appimage/` and `out/make/deb/`; run on Linux.
+
+No build is code-signed: Windows shows the SmartScreen warning, macOS needs a
+right-click then Open the first time, Linux packages install unsigned. Signing is
+left to whoever deploys it inside a company.
