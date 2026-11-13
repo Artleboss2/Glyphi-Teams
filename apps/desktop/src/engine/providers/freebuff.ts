@@ -6,6 +6,7 @@ import { buildAnalytics, type UsageRecord } from "../analytics/local-usage";
 import { emptyPricingCatalog, type PricingCatalog } from "../analytics/models-dev";
 import { estimateSessionCost } from "../analytics/session-source";
 import { metric, reading } from "./quota-shared";
+import { readFreebuffCloudQuota } from "./freebuff-cloud";
 import { resolveFreebuffModel } from "./freebuff-models";
 import { resolveFreebuffSources, type FreebuffPathOptions, type FreebuffSources } from "./freebuff-paths";
 
@@ -128,6 +129,22 @@ export function createFreebuffAdapter(options: FreebuffOptions = {}): ProviderAd
           metric("input_tokens_today", "Input tokens today", "tokens", scan.totals.input, null, null, null),
           metric("output_tokens_today", "Output tokens today", "tokens", scan.totals.output, null, null, null)
         ];
+        // A local database with nothing for today usually means the app moved the
+        // work server-side. The cloud quota then says the tool is alive and what
+        // is left, instead of the dashboard quietly reading zero.
+        if (scan.totals.total === 0) {
+          const cloud = await readFreebuffCloudQuota().catch(() => null);
+          if (cloud?.dayUsed !== null && cloud?.dayUsed !== undefined) {
+            metrics.push(
+              metric("sessions_today", "Sessions used today", "requests", cloud.dayUsed, cloud.dayLimit, null, null)
+            );
+          }
+          if (cloud?.creditsRemaining !== null && cloud?.creditsRemaining !== undefined) {
+            metrics.push(
+              metric("credits_remaining", "Credits remaining", "credits", cloud.creditsRemaining, null, null, null)
+            );
+          }
+        }
         const partialMessage = scan.truncated
           ? `Only the most recent ${MAX_HISTORY_RECORDS.toLocaleString("en-US")} Freebuff turns were read; older history is outside that window.`
           : "Some Freebuff databases could not be read.";
@@ -155,8 +172,17 @@ export function createFreebuffAdapter(options: FreebuffOptions = {}): ProviderAd
       // report zero until Desktop writes a token-bearing database.
       const credits = await readChatCredits(sources.chats, context, options, today, timeZone, recentCutoff);
       const todayCredits = metric("credits_today", "Credits used today", "credits", credits, null, null, null);
+      const fallbackMetrics = [todayCredits];
+      if (credits === 0) {
+        const cloud = await readFreebuffCloudQuota().catch(() => null);
+        if (cloud?.dayUsed !== null && cloud?.dayUsed !== undefined) {
+          fallbackMetrics.push(
+            metric("sessions_today", "Sessions used today", "requests", cloud.dayUsed, cloud.dayLimit, null, null)
+          );
+        }
+      }
       return {
-        ...reading("Freebuff", [todayCredits]),
+        ...reading("Freebuff", fallbackMetrics),
         accountKey: "local",
         source: "local_sessions",
         analytics: null,
