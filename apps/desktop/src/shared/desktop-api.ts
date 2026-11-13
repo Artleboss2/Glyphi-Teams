@@ -28,6 +28,8 @@ export interface TeamsTeam {
   role: "owner" | "member";
   /** Only an owner receives the code; null for everybody else. */
   inviteCode: string | null;
+  /** The team secret this machine knows, used to derive the chat key. */
+  secret: string | null;
   createdAt: string;
   memberCount: number;
   sharedCount: number;
@@ -41,9 +43,33 @@ export interface TeamsState {
   signedIn: boolean;
   account: { id: string; email: string; displayName: string } | null;
   teams: TeamsTeam[];
+  /** Per-member caps and today's spend, keyed by team id. */
+  limits: Record<string, TeamsLimit[]>;
+  /** The last page of each team conversation, oldest first, keyed by team id. */
+  messages: Record<string, TeamsMessage[]>;
   error: string | null;
   /** The stored session was refused; the window should ask for a sign-in. */
   expired?: boolean;
+}
+
+/** A cap the manager set, with the member's spend for today. */
+export interface TeamsLimit {
+  memberId: string;
+  displayName: string;
+  dailyTokens: number;
+  todayTokens: number;
+  over: boolean;
+}
+
+/** One message as it travels: ciphertext and an IV, never plaintext. */
+export interface TeamsMessage {
+  id: string;
+  memberId: string;
+  displayName: string;
+  cipher: string;
+  iv: string;
+  mine: boolean;
+  createdAt: string;
 }
 
 /** One day a member shares: totals only, never prompts or model text. */
@@ -62,7 +88,11 @@ export type TeamsAction =
   | "join"
   | "share"
   | "remove"
-  | "sync";
+  | "sync"
+  | "limits"
+  | "set-limit"
+  | "messages"
+  | "send-message";
 
 export interface TeamsActionPayload {
   email?: string;
@@ -74,6 +104,10 @@ export interface TeamsActionPayload {
   memberId?: string;
   shares?: boolean;
   days?: TeamsUsageDay[];
+  dailyTokens?: number;
+  /** AES-GCM ciphertext, base64. The main process never sees the plaintext. */
+  cipher?: string;
+  iv?: string;
 }
 export type EngineStatus = "starting" | "ready" | "degraded" | "stopped";
 
