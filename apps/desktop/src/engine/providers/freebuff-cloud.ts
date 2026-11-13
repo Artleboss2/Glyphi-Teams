@@ -48,6 +48,22 @@ export async function resolveFreebuffToken(options: CloudOptions = {}): Promise<
   if (fromEnvironment) return fromEnvironment;
 
   const home = options.homeDirectory ?? homedir();
+  const appData = environment.APPDATA?.trim();
+
+  // A plain one-line file is the simplest place to keep the token: no keychain,
+  // no settings screen, and the account owner can drop it in with Notepad.
+  for (const file of [
+    ...(appData ? [path.join(appData, "Glyphi", "freebuff-api-key")] : []),
+    path.join(home, ".config", "glyphi", "freebuff-api-key")
+  ]) {
+    try {
+      const token = (await readFile(file, "utf8")).split(/\r?\n/u)[0]?.trim();
+      if (token && token.length >= 20) return token;
+    } catch {
+      // No file here either.
+    }
+  }
+
   for (const candidate of [
     path.join(home, ".config", "manicode", "credentials.json"),
     path.join(home, ".config", "manicode-dev", "credentials.json"),
@@ -72,6 +88,8 @@ function number(value: unknown): number | null {
 
 /** One GET on the session endpoint; the quota lives under `usage` or `daily`. */
 export async function readFreebuffCloudQuota(options: CloudOptions = {}): Promise<FreebuffCloudQuota | null> {
+  // Nothing is polled and nothing is stored: one request when the dashboard
+  // refreshes, and the answer is thrown away with the render.
   const token = await resolveFreebuffToken(options);
   if (!token) return null;
   const doFetch = options.fetchImpl ?? fetch;
