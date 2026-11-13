@@ -87,7 +87,10 @@ protocol.registerSchemesAsPrivileged([
   }
 ]);
 app.enableSandbox();
-app.setName("Glyphi");
+// The product name is what puts this build in its own `%APPDATA%\Glyphi Teams`
+// folder: the plain Glyphi app keeps its history, preferences and sign-in, and
+// installing one never touches the other.
+app.setName("Glyphi Teams");
 if (process.env.GLYPHI_SMOKE_TEST === "1") {
   const directory = mkdtempSync(path.join(tmpdir(), "glyphi-smoke-"));
   app.setPath("userData", directory);
@@ -107,13 +110,13 @@ if (process.env.GLYPHI_SMOKE_TEST === "1") {
  * window itself. A brand id, written on the shortcut the app installs on every
  * launch, resolves to the app's own mark.
  */
-const APP_USER_MODEL_ID = "com.glyphi.desktop";
+const APP_USER_MODEL_ID = "com.glyphi.teams";
 
 /**
  * The id Windows uses to group windows, shortcuts and toasts. A development run
  * registers its own shortcut, so it gets Glyphi artwork instead of Electron's.
  */
-const APP_DEV_USER_MODEL_ID = "com.glyphi.desktop.dev";
+const APP_DEV_USER_MODEL_ID = "com.glyphi.teams.dev";
 const appUserModelId = app.isPackaged ? APP_USER_MODEL_ID : APP_DEV_USER_MODEL_ID;
 if (process.platform === "win32") app.setAppUserModelId(appUserModelId);
 
@@ -241,8 +244,8 @@ function trayImage(image: Electron.NativeImage): Electron.NativeImage {
 function startMenuShortcutPaths(): string[] {
   const programs = path.join(app.getPath("appData"), "Microsoft", "Windows", "Start Menu", "Programs");
   return [
-    path.join(programs, "Glyphi", "Glyphi.lnk"),
-    path.join(programs, "Glyphi.lnk")
+    path.join(programs, "Glyphi Teams", "Glyphi Teams.lnk"),
+    path.join(programs, "Glyphi Teams.lnk")
   ];
 }
 
@@ -262,7 +265,7 @@ function applicationShortcutPaths(): string[] {
 }
 
 function devShortcutPath(): string {
-  return path.join(app.getPath("appData"), "Microsoft", "Windows", "Start Menu", "Programs", "Glyphi Dev.lnk");
+  return path.join(app.getPath("appData"), "Microsoft", "Windows", "Start Menu", "Programs", "Glyphi Teams Dev.lnk");
 }
 
 /**
@@ -276,7 +279,7 @@ function devShortcutPath(): string {
 function applyShortcutMark(mark: AppMark): void {
   if (process.platform !== "win32" || process.env.GLYPHI_SMOKE_TEST === "1") return;
   const shortcuts = app.isPackaged ? applicationShortcutPaths() : [devShortcutPath()];
-  const stub = path.resolve(process.execPath, "..", "..", "Glyphi.exe");
+  const stub = path.resolve(process.execPath, "..", "..", "Glyphi Teams.exe");
   const target = app.isPackaged && existsSync(stub) ? stub : process.execPath;
   const icon = installAppMark(mark);
   for (const shortcut of shortcuts) {
@@ -292,7 +295,7 @@ function applyShortcutMark(mark: AppMark): void {
         icon,
         iconIndex: 0,
         appUserModelId: app.isPackaged ? APP_USER_MODEL_ID : APP_DEV_USER_MODEL_ID,
-        description: "Glyphi"
+        description: "Glyphi Teams"
       });
     } catch {
       // A locked Start Menu still leaves the window, taskbar button and tray updated.
@@ -322,7 +325,7 @@ function applyAppMark(mark: AppMark): void {
           // Relaunching this exact build keeps the icon and the version in step;
           // the Squirrel stub only forwards to it and can carry stale artwork.
           relaunchCommand: `"${process.execPath}"`,
-          relaunchDisplayName: "Glyphi"
+          relaunchDisplayName: "Glyphi Teams"
         });
       } catch {
         // setIcon above already changed the window artwork.
@@ -411,7 +414,7 @@ function createWindow(route: AppRoute = "day", showOnReady = true): BrowserWindo
           appIconPath: installAppMark(preferences.get().appearance.mark),
           appIconIndex: 0,
           relaunchCommand: `"${process.execPath}"`,
-          relaunchDisplayName: "Glyphi"
+          relaunchDisplayName: "Glyphi Teams"
         });
       } catch {
         // setIcon above already changed the window artwork.
@@ -1783,7 +1786,7 @@ if (squirrelStartup || !hasSingleInstanceLock) {
     ? newerInstalledVersion(process.execPath, app.getVersion())
     : null;
   if (installedAhead) {
-    const build = path.resolve(path.dirname(process.execPath), "..", `app-${installedAhead}`, "Glyphi.exe");
+    const build = path.resolve(path.dirname(process.execPath), "..", `app-${installedAhead}`, "Glyphi Teams.exe");
     if (existsSync(build)) {
       app.relaunch({ execPath: build, args: [] });
       app.exit(0);
