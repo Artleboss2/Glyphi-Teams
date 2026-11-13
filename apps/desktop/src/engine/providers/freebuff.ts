@@ -173,20 +173,30 @@ export function createFreebuffAdapter(options: FreebuffOptions = {}): ProviderAd
       const credits = await readChatCredits(sources.chats, context, options, today, timeZone, recentCutoff);
       const todayCredits = metric("credits_today", "Credits used today", "credits", credits, null, null, null);
       const fallbackMetrics = [todayCredits];
-      if (credits === 0) {
-        const cloud = await readFreebuffCloudQuota().catch(() => null);
-        if (cloud?.dayUsed !== null && cloud?.dayUsed !== undefined) {
-          fallbackMetrics.push(
-            metric("sessions_today", "Sessions used today", "requests", cloud.dayUsed, cloud.dayLimit, null, null)
-          );
-        }
+      const cloud = credits === 0 ? await readFreebuffCloudQuota().catch(() => null) : null;
+      if (cloud?.dayUsed !== null && cloud?.dayUsed !== undefined) {
+        fallbackMetrics.push(
+          metric("sessions_today", "Sessions used today", "requests", cloud.dayUsed, cloud.dayLimit, null, null)
+        );
       }
+      // Zero is only honest when something was actually measured. Freebuff keeps
+      // its turns server-side now, so a machine with neither a local database nor
+      // an account token has no source at all: say that instead of drawing a zero
+      // the dashboard would read as "you used nothing".
+      const noSource = credits === 0 && cloud === null;
       return {
         ...reading("Freebuff", fallbackMetrics),
         accountKey: "local",
         source: "local_sessions",
         analytics: null,
-        error: null,
+        error: noSource
+          ? {
+              code: "no_usage_source",
+              message:
+                "Freebuff stopped writing its usage to this machine, and no account token was found for the cloud quota. Nothing is being measured until one of the two comes back.",
+              retryable: false
+            }
+          : null,
         updatedAt: context.now.toISOString()
       };
     }
