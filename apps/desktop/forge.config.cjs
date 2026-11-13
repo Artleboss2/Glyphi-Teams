@@ -93,35 +93,39 @@ module.exports = {
         done();
       }
     ],
-    appBundleId: "com.glyphi.desktop",
+    // A separate bundle id, executable and installer name: Glyphi and Glyphi
+    // Teams are two applications that live side by side and never share data.
+    appBundleId: "com.glyphi.teams",
     appCategoryType: "public.app-category.developer-tools",
     appCopyright: "Copyright © 2026 Arthur Godart",
-    executableName: "Glyphi",
+    executableName: "Glyphi Teams",
     extraResource: [iconDirectory, windowsDirectory],
     icon: platformIcon,
-    name: "Glyphi",
+    name: "Glyphi Teams",
     osxSign,
     osxNotarize,
     windowsSign,
     win32metadata: {
       CompanyName: "Glyphi",
-      FileDescription: "AI provider usage at a glance",
-      InternalName: "Glyphi",
-      OriginalFilename: "Glyphi.exe",
-      ProductName: "Glyphi"
+      FileDescription: "AI usage for the whole team",
+      InternalName: "Glyphi Teams",
+      OriginalFilename: "Glyphi Teams.exe",
+      ProductName: "Glyphi Teams"
     }
   },
   rebuildConfig: {},
   makers: [
     new MakerSquirrel({
-      // The product name stays "Glyphi": the installed app, its data folder and
-      // the Squirrel app id are what make updates land on an existing install.
-      name: "Glyphi",
+      // No space in the Squirrel name: it becomes the install folder under
+      // `%LOCALAPPDATA%`, the `com.squirrel.GlyphiTeams...` app id and the
+      // `GlyphiTeams-<version> Setup.exe` file, none of which may collide with
+      // the plain Glyphi install already on the machine.
+      name: "GlyphiTeams",
       authors: "Arthur Godart",
       description: "Glyphi — local-first AI coding usage dashboard",
       setupIcon: path.join(iconDirectory, "glyphi.ico"),
       // Served from the project's own repository so the installer always has the current tile.
-      iconUrl: "https://raw.githubusercontent.com/Artleboss2/Glyphi/main/apps/desktop/resources/icons/glyphi.ico",
+      iconUrl: "https://raw.githubusercontent.com/Artleboss2/Glyphi-Teams/main/apps/desktop/resources/icons/glyphi.ico",
       windowsSign
     }),
     new MakerZIP({}, ["darwin", "win32"]),
@@ -146,23 +150,23 @@ module.exports = {
     // Both default `name` and `bin` to "@glyphi/desktop"; the rest is what they cannot infer.
     new MakerRpm({
       options: {
-        name: "glyphi",
-        bin: "Glyphi",
+        name: "glyphi-teams",
+        bin: "Glyphi Teams",
         genericName: "AI usage dashboard",
         categories: ["Utility", "Development"],
-        homepage: "https://github.com/Artleboss2/Glyphi",
-        license: "PolyForm-Noncommercial-1.0.0",
+        homepage: "https://github.com/Artleboss2/Glyphi-Teams",
+        license: "MIT",
         icon: path.join(iconDirectory, "glyphi.png")
       }
     }),
     new MakerDeb({
       options: {
-        name: "glyphi",
-        bin: "Glyphi",
+        name: "glyphi-teams",
+        bin: "Glyphi Teams",
         genericName: "AI usage dashboard",
         categories: ["Utility", "Development"],
         maintainer: "Arthur Godart",
-        homepage: "https://github.com/Artleboss2/Glyphi",
+        homepage: "https://github.com/Artleboss2/Glyphi-Teams",
         icon: path.join(iconDirectory, "glyphi.png")
       }
     })
