@@ -57,7 +57,7 @@ export function configureAutoUpdates(hooks: AutoUpdateHooks = {}): DesktopUpdate
    * running `app-<older>` executable would only ever relaunch itself.
    */
   function restartIntoInstalledBuild(): void {
-    const stub = path.resolve(process.execPath, "..", "..", "Glyphi.exe");
+    const stub = path.resolve(process.execPath, "..", "..", "Glyphi Teams.exe");
     if (process.platform === "win32" && existsSync(stub)) app.relaunch({ execPath: stub });
     else app.relaunch();
     app.exit(0);
@@ -66,7 +66,7 @@ export function configureAutoUpdates(hooks: AutoUpdateHooks = {}): DesktopUpdate
     if (!enabled) return false;
     previousVersion = previousInstalledVersion(process.execPath, currentVersion);
     if (!previousVersion) return false;
-    const build = path.resolve(path.dirname(process.execPath), "..", `app-${previousVersion}`, "Glyphi.exe");
+    const build = path.resolve(path.dirname(process.execPath), "..", `app-${previousVersion}`, "Glyphi Teams.exe");
     if (process.platform === "win32" && existsSync(build)) app.relaunch({ execPath: build });
     else app.relaunch();
     app.exit(0);
