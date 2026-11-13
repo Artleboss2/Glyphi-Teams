@@ -5,7 +5,9 @@ import { readUsageDays } from "./teams-usage";
 import type {
   TeamsAction,
   TeamsActionPayload,
+  TeamsLimit,
   TeamsMember,
+  TeamsMessage,
   TeamsState,
   TeamsTeam,
   TeamsUsageDay
@@ -17,6 +19,10 @@ import type {
  * The session token never leaves the main process. It is written to a 0600 file
  * under the app's user data so the window survives a restart, and the account
  * is re-read from the API on every refresh rather than trusted from that file.
+ *
+ * The same file keeps the invite code of every team this machine created or
+ * joined. That code is the team secret: the chat key is derived from it in the
+ * renderer, and the server never receives either the code or the key.
  */
 
 const TEAMS_API = (
@@ -28,6 +34,8 @@ interface StoredSession {
   token: string;
   email: string;
   displayName: string;
+  /** team id → invite code, kept so this machine can read the team chat. */
+  codes?: Record<string, string>;
 }
 
 interface ApiTeam {
@@ -45,7 +53,7 @@ interface ApiTeam {
 }
 
 function emptyState(error: string | null = null): TeamsState {
-  return { signedIn: false, account: null, teams: [], error };
+  return { signedIn: false, account: null, teams: [], limits: {}, messages: {}, error };
 }
 
 export class TeamsClient {
@@ -82,6 +90,18 @@ export class TeamsClient {
     }
   }
 
+  /** The invite code this machine knows for a team, when it has one. */
+  private secretFor(team: ApiTeam): string | null {
+    return this.session?.codes?.[team.id] ?? team.inviteCode ?? null;
+  }
+
+  private remember(teamId: string, code: string | null | undefined): void {
+    if (!this.session || !teamId || !code) return;
+    if (!/^[A-Z0-9]{4}-[A-Z0-9]{4}$/u.test(code)) return;
+    this.session.codes = { ...(this.session.codes ?? {}), [teamId]: code };
+    this.persist();
+  }
+
   private async call<T>(pathname: string, init: RequestInit = {}): Promise<{ ok: boolean; status: number; body: T | null }> {
     const response = await fetch(`${TEAMS_API}${pathname}`, {
       ...init,
@@ -111,6 +131,7 @@ export class TeamsClient {
       name: team.name,
       role: team.role,
       inviteCode: team.inviteCode,
+      secret: this.secretFor(team),
       createdAt: team.createdAt,
       memberCount: team.memberCount,
       sharedCount: team.sharedCount,
@@ -120,10 +141,23 @@ export class TeamsClient {
       members: team.members ?? []
     }));
 
+    // The manager window always shows the board, the caps and the conversation,
+    // so those two pages are fetched with the overview rather than on a click.
+    const limits: Record<string, TeamsLimit[]> = {};
+    const messages: Record<string, TeamsMessage[]> = {};
+    for (const team of teams) {
+      const caps = await this.call<{ limits: TeamsLimit[] }>(`/api/teams/limits?teamId=${team.id}`);
+      if (caps.ok && caps.body) limits[team.id] = caps.body.limits ?? [];
+      const chat = await this.call<{ messages: TeamsMessage[] }>(`/api/teams/messages?teamId=${team.id}`);
+      if (chat.ok && chat.body) messages[team.id] = chat.body.messages ?? [];
+    }
+
     return {
       signedIn: true,
       account: { id: "", email: this.session.email, displayName: this.session.displayName },
       teams,
+      limits,
+      messages,
       error: null
     };
   }
@@ -168,7 +202,8 @@ export class TeamsClient {
         this.session = {
           token,
           email: profile?.user?.email ?? email,
-          displayName: profile?.user?.displayName ?? email.split("@")[0]
+          displayName: profile?.user?.displayName ?? email.split("@")[0],
+          codes: this.session?.codes
         };
         this.persist();
         return await this.fetchTeams();
@@ -186,23 +221,25 @@ export class TeamsClient {
       if (action === "create") {
         const name = String(payload.name ?? "").trim();
         if (!name) return emptyState("Give the team a name.");
-        const result = await this.call<{ error?: string }>("/api/teams", {
+        const result = await this.call<{ error?: string; teamId?: string; inviteCode?: string }>("/api/teams", {
           method: "POST",
           body: JSON.stringify({ name })
         });
         if (!result.ok) return { ...(await this.fetchTeams()), error: messageFor(result.body?.error) };
+        if (result.body?.teamId) this.remember(result.body.teamId, result.body.inviteCode);
         return await this.fetchTeams();
       }
 
       if (action === "join") {
         const code = String(payload.code ?? "").trim().toUpperCase();
-        const result = await this.call<{ error?: string }>("/api/teams/join", {
+        const result = await this.call<{ error?: string; teamId?: string }>("/api/teams/join", {
           method: "POST",
           body: JSON.stringify({ code })
         });
         if (!result.ok) {
           return { ...(await this.fetchTeams()), error: messageFor(result.body?.error) };
         }
+        if (result.body?.teamId) this.remember(result.body.teamId, code);
         return await this.fetchTeams();
       }
 
@@ -220,6 +257,31 @@ export class TeamsClient {
           body: JSON.stringify({ teamId: payload.teamId, memberId: payload.memberId })
         });
         if (!result.ok) return { ...(await this.fetchTeams()), error: "That member could not be removed." };
+        return await this.fetchTeams();
+      }
+
+      if (action === "set-limit") {
+        const dailyTokens = Number(payload.dailyTokens ?? 0);
+        if (!Number.isFinite(dailyTokens) || dailyTokens < 0) {
+          return { ...(await this.fetchTeams()), error: "Enter a daily cap in tokens, or zero to remove it." };
+        }
+        const result = await this.call<{ error?: string }>("/api/teams/limits", {
+          method: "POST",
+          body: JSON.stringify({ teamId: payload.teamId, memberId: payload.memberId, dailyTokens })
+        });
+        if (!result.ok) return { ...(await this.fetchTeams()), error: messageFor(result.body?.error) };
+        return await this.fetchTeams();
+      }
+
+      if (action === "send-message") {
+        const cipher = String(payload.cipher ?? "");
+        const iv = String(payload.iv ?? "");
+        if (!cipher || !iv) return { ...(await this.fetchTeams()), error: "The message could not be sealed." };
+        const result = await this.call<{ error?: string }>("/api/teams/messages", {
+          method: "POST",
+          body: JSON.stringify({ teamId: payload.teamId, cipher, iv })
+        });
+        if (!result.ok) return { ...(await this.fetchTeams()), error: messageFor(result.body?.error) };
         return await this.fetchTeams();
       }
 
@@ -262,6 +324,12 @@ function messageFor(code: string | undefined): string {
       return "Give the team a name.";
     case "not_a_member":
       return "You are not a member of that team.";
+    case "not_allowed":
+      return "Only the team owner can do that.";
+    case "limit_range":
+      return "That cap is out of range.";
+    case "message_invalid":
+      return "That message is too long.";
     case "rate_limited":
       return "Too many attempts. Try again in a few minutes.";
     case "invalid_credentials":
