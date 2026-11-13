@@ -124,6 +124,12 @@ npx bun@1.3.14 run desktop:make
 - **macOS** — `out/make/dmg/` and `zip/darwin/`; must be run on macOS.
 - **Linux** — `out/make/appimage/` and `out/make/deb/`; run on Linux.
 
-No build is code-signed: Windows shows the SmartScreen warning, macOS needs a
-right-click then Open the first time, Linux packages install unsigned. Signing is
-left to whoever deploys it inside a company.
+Then sign what can be signed:
+
+```
+npx bun@1.3.14 run sign:builds
+```
+
+- **Windows** — the packaged app and the Squirrel setup get an Authenticode signature from a code-signing certificate in the current user's store. When none exists, the script creates one self-signed `CN=Glyphi Teams` key (5 years) and signs with it, so a build always leaves the machine signed. Replace it with a real certificate before publishing.
+- **Linux** — every AppImage, deb and rpm gets a detached GPG signature (`.asc`) from the `GLYPHI_GPG_KEY` user, defaulting to `Glyphi Teams`.
+- **macOS** — shipped unsigned on purpose: Apple needs a paid Developer ID and a notarisation round-trip, so the DMG is not signed and the first launch needs a right-click then Open.
