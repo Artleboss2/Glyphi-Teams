@@ -87,3 +87,26 @@ platform.
 ## License
 
 MIT © 2026 Arthur Godart.
+
+## The manager window
+
+The Teams edition is the app plus a manager surface. Sign in with a Teams account
+(an email and a password in your own backend — no Glyphi handle), create the team,
+and the window gives you:
+
+- **The board** — every member with tokens, 7-day totals, cost, active days and
+  their sharing switch. A member who turns sharing off keeps their row and loses
+  their numbers; the rows already shared are deleted.
+- **A daily token cap per member** (`POST /api/teams/limits`). The manager sets it,
+  the board flags whoever crosses it, and zero clears the cap.
+- **Encrypted team chat** (`/api/teams/messages`). Messages are sealed in the app
+  with AES-256-GCM under a key derived from the invite code with PBKDF2-SHA256;
+  the server stores ciphertext and an IV and holds no key. The invite code never
+  leaves the machine that created or joined the team.
+- **The invite QR** — the code as a QR image with the app mark in the centre. Error
+  correction is set to `H`, so covering the middle costs no redundancy.
+- **Your logo** — Settings → Appearance takes a PNG, and the window, the invite
+  card and the QR wear it.
+
+Everything the app sends is a day total or ciphertext. Nothing is stored by Glyphi
+Teams: the backend runs in the company's own Supabase project.
