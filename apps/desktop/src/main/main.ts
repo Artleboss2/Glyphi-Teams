@@ -1,8 +1,6 @@
 import { CloudAccount, type KnownProfileStatus } from "./cloud-account";
 import { TeamsClient } from "./teams-client";
 import type { TeamsAction, TeamsActionPayload } from "../shared/desktop-api";
-
-const teamsClient = new TeamsClient(() => path.join(app.getPath("userData"), "history.sqlite"));
 import { CATALOG, discoverProviderUsage, scanInstalledTools } from "../engine/discovery";
 import { summarizeDiscovery } from "./provider-discovery";
 import { ProviderCredentialStore, configureProviderCredentials } from "./provider-credentials";
@@ -74,6 +72,10 @@ import { UtilityEngineTransport } from "./utility-engine-transport";
 import { WINDOW_ASPECT_RATIO, windowSizeForWorkArea } from "./window-sizing";
 import { DESKTOP_VERSION } from "../shared/version";
 import { rendererReleaseDelay, usageCheckDelay } from "./background-economy";
+
+// The Teams window shares only day totals, which it reads from the history file
+// the engine already writes.
+const teamsClient = new TeamsClient(() => path.join(app.getPath("userData"), "history.sqlite"));
 
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string | undefined;
 declare const MAIN_WINDOW_VITE_NAME: string;
