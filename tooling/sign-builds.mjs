@@ -53,7 +53,7 @@ function powershell(script) {
 
 function signWindows() {
   const executables = [
-    ...collect(path.join(PACKAGED), [".exe"]).filter((file) => file.includes(`Glyphi.exe`)),
+    ...collect(path.join(PACKAGED), [".exe"]).filter((file) => /Glyphi( Teams)?\.exe$/u.test(file)),
     ...collect(path.join(MAKE, "squirrel.windows"), [".exe"])
   ];
   if (executables.length === 0) {
