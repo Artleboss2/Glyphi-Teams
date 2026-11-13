@@ -130,6 +130,6 @@ Then sign what can be signed:
 npx bun@1.3.14 run sign:builds
 ```
 
-- **Windows** — the packaged app and the Squirrel setup get an Authenticode signature from a code-signing certificate in the current user's store. When none exists, the script creates one self-signed `CN=Glyphi Teams` key (5 years) and signs with it, so a build always leaves the machine signed. Replace it with a real certificate before publishing.
-- **Linux** — every AppImage, deb and rpm gets a detached GPG signature (`.asc`) from the `GLYPHI_GPG_KEY` user, defaulting to `Glyphi Teams`.
+- **Windows** — the packaged app and the Squirrel setup get an Authenticode signature from a code-signing certificate in the current user's store. When none exists, the script creates a self-signed `CN=Glyphi Teams` key (5 years) and signs with it. A self-signed signature is *not* trusted: Windows keeps showing the SmartScreen warning until a certificate from a certificate authority replaces that key, so treat this as a build integrity check, not as trust.
+- **Linux** — every AppImage, deb and rpm gets a detached GPG signature (`.asc`) from the `GLYPHI_GPG_KEY` user, defaulting to `Glyphi Teams`. Nobody can verify it until that public key is published.
 - **macOS** — shipped unsigned on purpose: Apple needs a paid Developer ID and a notarisation round-trip, so the DMG is not signed and the first launch needs a right-click then Open.
