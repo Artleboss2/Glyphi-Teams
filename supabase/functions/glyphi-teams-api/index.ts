@@ -287,6 +287,69 @@ Deno.serve(async (request) => {
       return removed ? json(200, { ok: true }) : json(403, { error: "not_allowed" });
     }
 
+    if (path === "/api/teams/limits" && method === "GET") {
+      const session = await authorize(request);
+      const teamId = url.searchParams.get("teamId") ?? "";
+      if (!/^[0-9a-f-]{36}$/u.test(teamId)) return json(400, { error: "invalid_request" });
+      await limit(request, "limits", 480, 3600, session.accountId);
+      const rows = await rpc<unknown[]>("teams_api_limits", { p_account: session.accountId, p_team: teamId });
+      return json(200, { limits: rows ?? [] });
+    }
+
+    if (path === "/api/teams/limits" && method === "POST") {
+      const session = await authorize(request);
+      await limit(request, "limit-set", 240, 3600, session.accountId);
+      const body = await readJson(request);
+      const teamId = typeof body?.teamId === "string" ? body.teamId : "";
+      const memberId = typeof body?.memberId === "string" ? body.memberId : "";
+      if (!/^[0-9a-f-]{36}$/u.test(teamId) || !/^[0-9a-f-]{36}$/u.test(memberId)) {
+        return json(400, { error: "invalid_request" });
+      }
+      const raw = typeof body?.dailyTokens === "number" ? body.dailyTokens : 0;
+      if (!Number.isFinite(raw) || raw < 0) return json(400, { error: "invalid_request" });
+      const result = await rpc<{ ok?: boolean; error?: string; dailyTokens?: number }>("teams_api_limit_set", {
+        p_actor: session.accountId,
+        p_team: teamId,
+        p_member: memberId,
+        p_daily_tokens: Math.min(Math.round(raw), 1_000_000_000_000)
+      });
+      return result?.ok ? json(200, result) : json(403, { error: result?.error ?? "limit_failed" });
+    }
+
+    if (path === "/api/teams/messages" && method === "GET") {
+      const session = await authorize(request);
+      const teamId = url.searchParams.get("teamId") ?? "";
+      if (!/^[0-9a-f-]{36}$/u.test(teamId)) return json(400, { error: "invalid_request" });
+      const before = url.searchParams.get("before");
+      const stamp = before && /^\d{4}-\d{2}-\d{2}T[0-9:.]+Z?$/u.test(before) ? before : null;
+      await limit(request, "messages", 900, 3600, session.accountId);
+      const rows = await rpc<unknown[]>("teams_api_messages", {
+        p_account: session.accountId,
+        p_team: teamId,
+        p_limit: 100,
+        p_before: stamp
+      });
+      return json(200, { messages: rows ?? [] });
+    }
+
+    if (path === "/api/teams/messages" && method === "POST") {
+      const session = await authorize(request);
+      await limit(request, "message-send", 240, 3600, session.accountId);
+      const body = await readJson(request);
+      const teamId = typeof body?.teamId === "string" ? body.teamId : "";
+      const cipher = typeof body?.cipher === "string" ? body.cipher : "";
+      const iv = typeof body?.iv === "string" ? body.iv : "";
+      if (!/^[0-9a-f-]{36}$/u.test(teamId)) return json(400, { error: "invalid_request" });
+      if (cipher.length < 1 || cipher.length > 8192 || iv.length < 8 || iv.length > 64) {
+        return json(400, { error: "message_invalid" });
+      }
+      const result = await rpc<{ ok?: boolean; error?: string; id?: string; createdAt?: string }>(
+        "teams_api_message_send",
+        { p_account: session.accountId, p_team: teamId, p_cipher: cipher, p_iv: iv }
+      );
+      return result?.ok ? json(201, result) : json(403, { error: result?.error ?? "message_failed" });
+    }
+
     return json(404, { error: "not_found" });
   } catch (error) {
     if (error instanceof ApiError) {
