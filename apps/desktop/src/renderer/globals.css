@@ -796,6 +796,26 @@ html[data-appearance-font="cormorant"] {
   height: 0;
 }
 
+/* Dans la fenêtre Teams, pas de rail gris latéral et pas de scrollbar verticale :
+   le contenu tient dans la fenêtre sans la barre grise qui sert à descendre. */
+.atlas-app-shell[data-route="teams"] {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.atlas-app-shell[data-route="teams"] .atlas-app-shell__rail {
+  display: none;
+}
+
+.atlas-app-shell[data-route="teams"] .atlas-app-shell__workspace {
+  grid-column: 1;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.atlas-app-shell[data-route="teams"] .atlas-app-shell__workspace::-webkit-scrollbar {
+  display: none;
+}
+
 .atlas-provider-logo {
   display: inline-grid;
   flex: 0 0 auto;
