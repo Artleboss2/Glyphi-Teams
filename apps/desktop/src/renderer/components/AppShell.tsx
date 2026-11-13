@@ -127,7 +127,7 @@ export function AppShell({ route, engineStatus, noticeCount, onNavigate, profile
   }, [route]);
 
   return (
-    <div className="atlas-app-shell">
+    <div className="atlas-app-shell" data-route={route}>
       <header aria-label="Glyphi" className="atlas-app-shell__titlebar drag-region">
         <div className="atlas-app-shell__brand">
           <span aria-hidden="true" className="atlas-app-shell__brand-mark">
@@ -142,7 +142,7 @@ export function AppShell({ route, engineStatus, noticeCount, onNavigate, profile
         <WindowControls />
       </header>
 
-      <aside aria-label="Primary navigation" className="atlas-app-shell__rail no-drag" ref={railRef}>
+      <aside aria-label="Primary navigation" className="atlas-app-shell__rail no-drag" ref={railRef} data-route={route}>
         {highlight ? (
           <span
             aria-hidden="true"
@@ -198,8 +198,8 @@ export function AppShell({ route, engineStatus, noticeCount, onNavigate, profile
 
       {alertBanner}
 
-      <main className="atlas-app-shell__workspace no-drag" onScroll={handleWorkspaceScroll} ref={workspaceRef}>
-        <div className="atlas-route-view" data-direction={direction} key={route}>
+      <main className="atlas-app-shell__workspace no-drag" onScroll={handleWorkspaceScroll} ref={workspaceRef} data-route-scroll={route === "teams" ? "hidden" : undefined}>
+        <div className="atlas-route-view" data-direction={direction} data-route={route} key={route}>
           {children}
         </div>
       </main>
