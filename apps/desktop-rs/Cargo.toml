@@ -1,0 +1,24 @@
+[package]
+name = "glyphi-teams-desktop"
+version = "0.1.0"
+edition = "2021"
+description = "Glyphi Teams desktop shell: WebView2 window in Rust instead of an Electron runtime"
+license = "MIT"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+# Tauri uses the WebView the system already ships (WebView2 on Windows, WebKit on
+# macOS and Linux) instead of bundling Chromium: the whole shell is a few MB in
+# memory, against the ~300 MB an Electron app reaches with the same UI.
+tauri = { version = "2", features = [] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true

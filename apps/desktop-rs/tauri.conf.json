@@ -1,0 +1,39 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Glyphi Teams",
+  "version": "0.1.0",
+  "identifier": "com.glyphi.teams",
+  "build": {
+    "frontendDist": "../../../.vite/renderer/main_window"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "Glyphi Teams",
+        "width": 1180,
+        "height": 780,
+        "minWidth": 720,
+        "minHeight": 520,
+        "resizable": true,
+        "fullscreen": false
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "category": "DeveloperTool",
+    "shortDescription": "AI usage for the whole team",
+    "longDescription": "The manager window for a Glyphi Teams group: one board for every member's AI usage, daily caps, an end-to-end encrypted chat and the local counting proxy.",
+    "externalBin": ["binaries/glyphi-proxy"],
+    "icon": [
+      "../desktop/resources/icons/glyphi.png",
+      "../desktop/resources/installer/glyphi.icns",
+      "../desktop/resources/icons/glyphi.ico"
+    ]
+  }
+}
