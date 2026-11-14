@@ -111,6 +111,41 @@ and the window gives you:
 Everything the app sends is a day total or ciphertext. Nothing is stored by Glyphi
 Teams: the backend runs in the company's own Supabase project.
 
+## Counting proxy
+
+The Teams build ships the same Rust proxy as Glyphi and starts it with the app: it
+listens on `127.0.0.1:4787`, forwards each request to the real provider and counts
+what the provider reports. A member whose tool writes nothing readable still shows
+up in the manager's totals.
+
+Point an agent at it once, with the provider name in the path:
+
+```
+OPENAI_BASE_URL=http://127.0.0.1:4787/p/openai
+ANTHROPIC_BASE_URL=http://127.0.0.1:4787/p/anthropic
+OPENAI_BASE_URL=http://127.0.0.1:4787/p/ollama      # a local runtime
+```
+
+83 providers are known by name; any other endpoint works with an explicit upstream
+(`.../p/my-gateway/v1/chat/completions?upstream=https://gateway.example.com/v1`) or
+an entry in `providers.json` next to the binary:
+
+```json
+{ "my-gateway": "https://gateway.example.com/v1" }
+```
+
+The manager reads `GET /__glyphi/usage` and shows it as one more source beside the
+local history: today's input, output and a line per provider — the twelve busiest
+named, the rest summed, so the sixteen-metric contract never breaks. `GET
+/__glyphi/health` says whether the proxy is up, `GET /__glyphi/providers` lists the
+names it knows.
+
+It listens on loopback only, keeps no credential (each request carries its own
+`Authorization`), stores nothing but one JSON line per request in the app data
+folder, and uses about 6 MB of RAM. It cannot read traffic it did not route: a
+client that hardcodes its endpoint would need TLS interception, which means a root
+certificate on the machine, and that is not a trade this project makes.
+
 ## Builds and installers
 
 The application is packaged with electron-forge. One command builds the
