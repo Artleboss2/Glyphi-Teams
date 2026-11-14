@@ -288,9 +288,12 @@ export class TeamsClient {
       if (action === "sync") {
         // The renderer never computes usage: the main process reads the local
         // history database itself and sends only day totals.
+        // Everything the history holds, not a window: the manager shares the whole
+        // record and refreshes it on its own. A decade is the practical ceiling of
+        // a local history file, and it keeps the push under the API's body limit.
         const days: TeamsUsageDay[] = Array.isArray(payload.days)
-          ? payload.days.slice(0, 60)
-          : readUsageDays(this.historyPath(), 30);
+          ? payload.days.slice(0, 2000)
+          : readUsageDays(this.historyPath(), 3650);
         if (days.length === 0) {
           return { ...(await this.fetchTeams()), error: "There is nothing to share yet." };
         }
