@@ -69,7 +69,10 @@ glyphi-api-web/
 .glyphi-media/
 glyphi-announcement-1080p.mp4
 
-# Rust work in progress: kept on the machine, published with 0.3.0 together with Glyphi 0.6.0
-crates/
+# The counting proxy ships with the app; its build output and the staged copy do not.
+crates/*/target/
+apps/desktop/resources/proxy/
+
+# The Rust shell stays on the machine until 0.6.0 for Glyphi and 0.3.0 for Teams.
 apps/desktop-rs/
 docs/migration-rust.md
