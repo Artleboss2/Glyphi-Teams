@@ -9,6 +9,7 @@ import {
   latestPublishedVersion,
   newerInstalledVersion,
   previousInstalledVersion,
+  describeUpdateError,
   redactUpdateError,
   resolveUpdateSource,
   squirrelFeedURL,
@@ -22,12 +23,12 @@ const custom = resolveUpdateSource("custom", "arthur/Glyphi-Builds");
 describe("squirrelFeedURL", () => {
   it("feeds Windows from Glyphi's GitHub releases, where Squirrel finds RELEASES", () => {
     expect(squirrelFeedURL("win32", "x64", "0.4.6", glyphi))
-      .toBe("https://github.com/Artleboss2/Glyphi/releases/latest/download");
+      .toBe("https://github.com/Artleboss2/Glyphi-Teams/releases/latest/download");
   });
 
   it("defaults to Glyphi's releases for an updater without a source", () => {
     expect(squirrelFeedURL("win32", "x64", "0.4.6"))
-      .toBe("https://github.com/Artleboss2/Glyphi/releases/latest/download");
+      .toBe("https://github.com/Artleboss2/Glyphi-Teams/releases/latest/download");
   });
 
   it("has no Squirrel feed on macOS or Linux, which install from a package", () => {
@@ -38,11 +39,11 @@ describe("squirrelFeedURL", () => {
 
 describe("update sources", () => {
   it("polls the GitHub release API for Glyphi", () => {
-    expect(updateCheckURL(glyphi)).toBe("https://api.github.com/repos/Artleboss2/Glyphi/releases/latest");
+    expect(updateCheckURL(glyphi)).toBe("https://api.github.com/repos/Artleboss2/Glyphi-Teams/releases/latest");
   });
 
   it("sends a manual download to the GitHub releases page", () => {
-    expect(downloadPageURL(glyphi)).toBe("https://github.com/Artleboss2/Glyphi/releases/latest");
+    expect(downloadPageURL(glyphi)).toBe("https://github.com/Artleboss2/Glyphi-Teams/releases/latest");
   });
 
   it("reads the releases of a repository the user names", () => {
@@ -54,11 +55,11 @@ describe("update sources", () => {
   });
 
   it("falls back to Glyphi's releases while the repository field is empty", () => {
-    expect(resolveUpdateSource("custom", "").repository).toBe("Artleboss2/Glyphi");
+    expect(resolveUpdateSource("custom", "").repository).toBe("Artleboss2/Glyphi-Teams");
   });
 
   it("keeps an unknown publisher on Glyphi's releases", () => {
-    expect(resolveUpdateSource("nonsense" as never)).toEqual({ channel: "github", repository: "Artleboss2/Glyphi" });
+    expect(resolveUpdateSource("nonsense" as never)).toEqual({ channel: "github", repository: "Artleboss2/Glyphi-Teams" });
   });
 });
 
@@ -144,6 +145,28 @@ describe("newerInstalledVersion", () => {
     const root = install("0.3.5", "0.3.6", "0.3.9");
     expect(previousInstalledVersion(path.join(root, "app-0.3.9", "Glyphi.exe"), "0.3.9")).toBe("0.3.6");
     expect(previousInstalledVersion(path.join(root, "app-0.3.5", "Glyphi.exe"), "0.3.5")).toBeNull();
+  });
+});
+
+describe("describeUpdateError", () => {
+  it("names the feed status instead of blaming the connection", () => {
+    expect(describeUpdateError(new Error("Release check returned 404")))
+      .toBe("Release check returned 404. Try again later.");
+  });
+
+  it("names a failing helper process by its exit code", () => {
+    expect(describeUpdateError(new Error("Update.exe exited with code 1")))
+      .toBe("The update helper exited with code 1. Try again later.");
+  });
+
+  it("keeps the release URL out of the message the user sees", () => {
+    const message = describeUpdateError(new Error("net::ERR_NAME_NOT_RESOLVED https://github.com/x/y"));
+    expect(message).toContain("ERR_NAME_NOT_RESOLVED");
+    expect(message).not.toContain("https:");
+  });
+
+  it("falls back when the updater reports nothing", () => {
+    expect(describeUpdateError(new Error(""))).toBe("The updater gave no reason. Try again later.");
   });
 });
 

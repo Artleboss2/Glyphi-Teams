@@ -71,9 +71,10 @@ describe("desktop updates", () => {
   it("reports updater errors and allows another manual check", async () => {
     const updater = configureAutoUpdates();
     await updater.check();
-    autoUpdater.emit("error", new Error("Connection failed at https://github.com/Artleboss2/Glyphi/private"));
+    autoUpdater.emit("error", new Error("Connection failed at https://github.com/Artleboss2/Glyphi-Teams/private"));
     expect(updater.getState().status).toBe("error");
-    expect(updater.getState().error).toContain("try again");
+    expect(updater.getState().error).toContain("Connection failed at [update-url]");
+    expect(updater.getState().error).toContain("Try again later");
     expect(updater.getState().error).not.toContain("https:");
     expect((await updater.check()).status).toBe("checking");
     expect(autoUpdater.checkForUpdates).toHaveBeenCalledTimes(2);
@@ -113,7 +114,7 @@ describe("desktop updates", () => {
     expect(await updater.check()).toMatchObject({ status: "available", availableVersion: "0.2.12" });
     expect(autoUpdater.setFeedURL).not.toHaveBeenCalled();
     expect(vi.mocked(net.fetch).mock.calls[0][0])
-      .toBe("https://api.github.com/repos/Artleboss2/Glyphi/releases/latest");
+      .toBe("https://api.github.com/repos/Artleboss2/Glyphi-Teams/releases/latest");
   });
 
   it("reports Linux releases for manual download without calling Squirrel", async () => {
@@ -138,8 +139,8 @@ describe("desktop updates", () => {
   it("reads Glyphi's GitHub releases when that channel is selected", async () => {
     const updater = configureAutoUpdates({ source: () => resolveUpdateSource("github") });
     await updater.check();
-    expect(autoUpdater.setFeedURL).toHaveBeenCalledWith({ url: "https://github.com/Artleboss2/Glyphi/releases/latest/download" });
-    expect(updater.downloadPageURL()).toBe("https://github.com/Artleboss2/Glyphi/releases/latest");
+    expect(autoUpdater.setFeedURL).toHaveBeenCalledWith({ url: "https://github.com/Artleboss2/Glyphi-Teams/releases/latest/download" });
+    expect(updater.downloadPageURL()).toBe("https://github.com/Artleboss2/Glyphi-Teams/releases/latest");
   });
 
   it("follows the channel without a restart", async () => {
@@ -150,7 +151,7 @@ describe("desktop updates", () => {
     channel = "custom";
     await updater.check();
     expect(vi.mocked(autoUpdater.setFeedURL).mock.calls.map((call) => call[0])).toEqual([
-      { url: "https://github.com/Artleboss2/Glyphi/releases/latest/download" },
+      { url: "https://github.com/Artleboss2/Glyphi-Teams/releases/latest/download" },
       { url: "https://github.com/arthur/Glyphi-Builds/releases/latest/download" }
     ]);
   });
@@ -161,7 +162,7 @@ describe("desktop updates", () => {
     const updater = configureAutoUpdates({ source: () => resolveUpdateSource("github") });
     expect(await updater.check()).toMatchObject({ status: "available", availableVersion: "0.2.12" });
     expect(vi.mocked(net.fetch).mock.calls[0][0])
-      .toBe("https://api.github.com/repos/Artleboss2/Glyphi/releases/latest");
+      .toBe("https://api.github.com/repos/Artleboss2/Glyphi-Teams/releases/latest");
     expect(autoUpdater.checkForUpdates).not.toHaveBeenCalled();
   });
 });
