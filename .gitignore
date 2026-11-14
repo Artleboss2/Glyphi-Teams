@@ -68,3 +68,8 @@ glyphi-api-web/
 # The announcement film is built in its own repository.
 .glyphi-media/
 glyphi-announcement-1080p.mp4
+
+# Rust build output
+crates/*/target/
+apps/desktop-rs/target/
+apps/desktop-rs/binaries/
