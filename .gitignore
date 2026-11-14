@@ -69,7 +69,7 @@ glyphi-api-web/
 .glyphi-media/
 glyphi-announcement-1080p.mp4
 
-# Rust build output
-crates/*/target/
-apps/desktop-rs/target/
-apps/desktop-rs/binaries/
+# Rust work in progress: kept on the machine, published with 0.3.0 together with Glyphi 0.6.0
+crates/
+apps/desktop-rs/
+docs/migration-rust.md
