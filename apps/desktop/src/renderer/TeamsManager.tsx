@@ -14,7 +14,7 @@ const APP_MARK = "./glyphi.png";
  * lives in the main process and never reaches this renderer. Chat plaintext only
  * exists here — the API stores ciphertext.
  */
-export function TeamsManager(): React.JSX.Element {
+export function TeamsManager({ onBack }: { onBack: () => void }): React.JSX.Element {
   const [state, setState] = useState<TeamsState | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -50,6 +50,28 @@ export function TeamsManager(): React.JSX.Element {
     },
     []
   );
+
+  /**
+   * Sharing is no longer a button: the manager pushes everything the local
+   * history holds when it opens, then every thirty minutes, so the team board is
+   * never behind because someone forgot to press it.
+   */
+  const [sharedAt, setSharedAt] = useState<number | null>(null);
+  useEffect(() => {
+    if (!state?.account || state.teams.length === 0) return;
+    let cancelled = false;
+    const share = async (): Promise<void> => {
+      if (cancelled) return;
+      await run("sync");
+      if (!cancelled) setSharedAt(Date.now());
+    };
+    void share();
+    const timer = setInterval(() => void share(), 30 * 60_000);
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
+  }, [state?.account?.id, state?.teams.length, run]);
 
   const money = (micros: number): string => `$${(micros / 1_000_000).toFixed(2)}`;
   const compact = (value: number): string =>
@@ -157,23 +179,32 @@ export function TeamsManager(): React.JSX.Element {
   return (
     <div style={{ padding: "28px 32px 40px", display: "grid", gap: 18 }}>
       <header style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
-        <div>
-          <p style={{ fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", opacity: 0.6, margin: 0 }}>
-            Glyphi Teams
-          </p>
-          <h1 style={{ fontSize: 28, fontWeight: 500, margin: "4px 0 2px" }}>{state.account?.displayName}</h1>
-          <p style={{ fontSize: 12, opacity: 0.6, margin: 0 }}>{state.account?.email}</p>
-        </div>
-        <div style={{ display: "flex", gap: 8 }}>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 12 }}>
           <button
-            style={button}
+            aria-label="Back to the dashboard"
+            onClick={onBack}
+            style={{ ...ghost, padding: "7px 11px", fontSize: 15, lineHeight: 1 }}
+            title="Back to the dashboard"
             type="button"
-            onClick={() => void run("sync")}
-            disabled={busy || state.teams.length === 0}
-            title="Send the last thirty days of local usage to every team you are in"
           >
-            {busy ? "Sharing…" : "Share my last 30 days"}
+            ‹
           </button>
+          <div>
+            <p style={{ fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", opacity: 0.6, margin: 0 }}>
+              Glyphi Teams
+            </p>
+            <h1 style={{ fontSize: 28, fontWeight: 500, margin: "4px 0 2px" }}>{state.account?.displayName}</h1>
+            <p style={{ fontSize: 12, opacity: 0.6, margin: 0 }}>{state.account?.email}</p>
+          </div>
+        </div>
+        <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+          <span style={{ fontSize: 12, opacity: 0.6 }} title="All of your usage is sent to every team you are in, then refreshed every thirty minutes">
+            {busy
+              ? "Sharing your usage…"
+              : sharedAt
+                ? `Shared automatically \u00b7 ${new Date(sharedAt).toLocaleTimeString()}`
+                : "Shares automatically every 30 minutes"}
+          </span>
           <button style={ghost} type="button" onClick={() => void run("sign-out")} disabled={busy}>
             Sign out
           </button>
