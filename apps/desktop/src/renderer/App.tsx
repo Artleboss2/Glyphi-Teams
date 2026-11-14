@@ -457,7 +457,7 @@ export function App(): React.JSX.Element {
           prompt={profilePrompt.prompt}
         />
       )}
-      {route === "teams" && <TeamsManager />}
+      {route === "teams" && <TeamsManager onBack={() => navigate("day")} />}
       {route === "settings" && (
         <Settings
           key={settingsTab}
