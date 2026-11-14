@@ -99,7 +99,8 @@ module.exports = {
     appCategoryType: "public.app-category.developer-tools",
     appCopyright: "Copyright © 2026 Arthur Godart",
     executableName: "Glyphi Teams",
-    extraResource: [iconDirectory, windowsDirectory],
+    // `tooling/build-proxy.mjs` stages the Rust counting proxy here before packaging.
+    extraResource: [iconDirectory, windowsDirectory, path.join(resources, "proxy")],
     icon: platformIcon,
     name: "Glyphi Teams",
     osxSign,
