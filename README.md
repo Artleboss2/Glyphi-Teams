@@ -126,13 +126,18 @@ ANTHROPIC_BASE_URL=http://127.0.0.1:4787/p/anthropic
 OPENAI_BASE_URL=http://127.0.0.1:4787/p/ollama      # a local runtime
 ```
 
-83 providers are known by name; any other endpoint works with an explicit upstream
-(`.../p/my-gateway/v1/chat/completions?upstream=https://gateway.example.com/v1`) or
-an entry in `providers.json` next to the binary:
+85 names are known out of the box, but a name is only a shortcut: the host works as
+the provider too (`/p/api.example.com/v1/chat/completions`), as does an explicit
+upstream (`.../p/my-gateway/v1/chat/completions?upstream=https://gateway.example.com/v1`)
+or an entry in a `providers.json` next to the binary:
 
 ```json
 { "my-gateway": "https://gateway.example.com/v1" }
 ```
+
+When a provider reports no token usage — a local runtime, a gateway that strips
+`usage`, a text-only stream — the proxy counts the real prompt and completion text
+and records how many messages the request carried, marking the row as an estimate.
 
 The manager reads `GET /__glyphi/usage` and shows it as one more source beside the
 local history: today's input, output and a line per provider — the twelve busiest
